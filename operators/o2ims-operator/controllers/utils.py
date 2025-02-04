@@ -159,10 +159,11 @@ def delete_package_variant(name: str = None, namespace: str = None, logger=None)
         )
     except Exception as e:
         return {"status": False, "reason": f"NotAbleToCommunicateWithTheCluster {e}"}
-    logger.debug(
-        "response of the request to delete package variant %s is %s"
-        % (r.request.url, r.json())
-    )
+    if logger:
+        logger.debug(
+            "response of the request to delete package variant %s is %s"
+            % (r.request.url, r.json())
+        )
     if r.status_code in [200, 202, 204]:
         response = {"status": True, "name": name}
     elif r.status_code in [401, 403]:
@@ -171,7 +172,6 @@ def delete_package_variant(name: str = None, namespace: str = None, logger=None)
         response = {"status": False, "reason": "notFound"}
     else:
         response = {"status": False, "reason": r.json()}
-
     return response
 
 
@@ -192,7 +192,8 @@ def get_package_variant(name: str = None, namespace: str = None, logger=None):
         "User-Agent": "kopf o2ims operator/python",
         "Authorization": "Bearer {}".format(TOKEN),
     }
-    logger.debug("get package variant")
+    if logger:
+        logger.debug("get package variant")
     try:
         r = requests.get(
             f"{KUBERNETES_BASE_URL}/apis/config.porch.kpt.dev/v1alpha1/namespaces/{namespace}/packagevariants/{name}",
@@ -200,21 +201,24 @@ def get_package_variant(name: str = None, namespace: str = None, logger=None):
             verify=HTTPS_VERIFY,
         )
     except Exception as e:
-        logger.debug("get_package_variant error: %s" % (e))
+        if logger:
+            logger.debug("get_package_variant error: %s" % (e))
         return {"status": False, "reason": f"NotAbleToCommunicateWithTheCluster {e}"}
-    logger.debug(
-        "response of the request to get package variant %s is %s"
-        % (r.request.url, r.json())
-    )
+    if logger:
+        logger.debug(
+            "response of the request to get package variant %s is %s"
+            % (r.request.url, r.json())
+        )
     if r.status_code in [200]:
         response = {"status": True, "name": name, "body": r.json()}
     elif r.status_code in [401, 403]:
-        response = {"status": False, "reason": "Unauthorized"}
+        response = {"status": False, "reason": "unauthorized"}
     elif r.status_code == 404:
         response = {"status": False, "reason": f"notFound"}
     else:
         response = {"status": False, "reason": r.json()}
-    logger.debug("Status %s" % (response))
+    if logger:
+        logger.debug("Status %s" % (response))
     return response
 
 
@@ -300,10 +304,11 @@ def delete_package_revision(name: str = None, namespace: str = None, logger=None
         )
     except Exception as e:
         return {"status": False, "reason": f"NotAbleToCommunicateWithTheCluster {e}"}
-    logger.debug(
-        "response of the request to delete package revision %s is %s"
-        % (r.request.url, r.json())
-    )
+    if logger:
+        logger.debug(
+            "response of the request to delete package revision %s is %s"
+            % (r.request.url, r.json())
+        )
     if r.status_code in [200, 202, 204]:
         response = {"status": True, "name": name}
     elif r.status_code in [401, 403]:
@@ -353,7 +358,7 @@ def check_o2ims_provisioning_request(
         }
         if "provisionedResourceSet" in r.json()["status"]:
             response.update(
-                {"provisionedResourceSet": ["status"]["provisionedResourceSet"]}
+                {"provisionedResourceSet": r.json()["status"]["provisionedResourceSet"]}
             )
     elif r.status_code in [200] and "status" not in r.json().keys():
         response = {
@@ -396,8 +401,8 @@ def get_capi_cluster(name: str = None, namespace: str = None, logger=None):
         "Accept": "application/json",
         "Authorization": "Bearer {}".format(TOKEN),
     }
-
-    logger.debug("get_capi_cluster")
+    if logger:
+        logger.debug("get_capi_cluster")
 
     try:
         r = requests.get(
@@ -406,12 +411,13 @@ def get_capi_cluster(name: str = None, namespace: str = None, logger=None):
             verify=HTTPS_VERIFY,
         )
     except Exception as e:
-        logger.debug("get_capi_cluster error: %s" % (e))
+        if logger:
+            logger.debug("get_capi_cluster error: %s" % (e))
         return {"status": False, "reason": f"NotAbleToCommunicateWithTheCluster {e}"}
     if r.status_code in [200]:
         response = {"status": True, "body": r.json()}
     elif r.status_code in [401, 403]:
-        response = {"status": False, "reason": "Unauthorized"}
+        response = {"status": False, "reason": "unauthorized"}
     elif r.status_code == 404:
         response = {"status": False, "reason": "notFound"}
     else:
@@ -419,5 +425,6 @@ def get_capi_cluster(name: str = None, namespace: str = None, logger=None):
             "status": False,
             "reason": r.json()["status"]["conditions"][0]["message"],
         }
-    logger.debug(f"get_capi_cluster response: {r.json()}")
+    if logger:
+        logger.debug(f"get_capi_cluster response: {r.json()}")
     return response
