@@ -20,8 +20,16 @@ PV_PARAM = {
     "namespace": "namespace",
     "create": False,
 }
+PV_REV = {
+    "items": [
+        {
+            "metadata": {"name": "name"},
+            "spec": {"lifecycle": "lifecycle", "packageName": NAME},
+        }
+    ]
+}
 PACKAGE_VARIANTS_URI = f"{KUBERNETES_BASE_URL}/apis/config.porch.kpt.dev/v1alpha1/namespaces/{NAMESPACE}/packagevariants"
-PACKAGE_REVISIONS_URI = f"{KUBERNETES_BASE_URL}/apis/porch.kpt.dev/v1alpha1/namespaces/{NAMESPACE}/packagerevisions/{NAME}"
+PACKAGE_REVISIONS_URI = f"{KUBERNETES_BASE_URL}/apis/porch.kpt.dev/v1alpha1/namespaces/{NAMESPACE}/packagerevisions"
 PROVISIONING_REQUEST_URI = f"{KUBERNETES_BASE_URL}/apis/o2ims.provisioning.oran.org/v1alpha1/provisioningrequests"
 CAPI_URI = f"{KUBERNETES_BASE_URL}/apis/cluster.x-k8s.io/v1beta1/namespaces/{NAMESPACE}/clusters/{NAME}"
 
@@ -57,10 +65,19 @@ def setup_and_teardown():
         (404, 404, False, True, "reason", "notFound", False),
         (404, 400, False, True, "reason", TEST_JSON["message"], False),
         (404, 1234, False, True, "reason", TEST_JSON, False),
+        (404, None, False, True, "reason", "NotAbleToCommunicateWithTheCluster ", True),
         (404, 200, False, False, "reason", "notFound", False),
         (500, None, False, False, "reason", "k8sApi server is not reachable", False),
         (1234, None, False, False, "reason", TEST_JSON, False),
-        (None, None, False, False, "reason", "NotAbleToCommunicateWithTheCluster ", True),
+        (
+            None,
+            None,
+            False,
+            False,
+            "reason",
+            "NotAbleToCommunicateWithTheCluster ",
+            True,
+        ),
     ],
 )
 def test_create_package_variant(
@@ -170,8 +187,44 @@ def test_get_package_variant(
 
 
 @responses.activate
-def test_get_package_revisions_for_package_variant():
-    pass
+@pytest.mark.parametrize(
+    "http_code, status, response_2, response_2_value, exception",
+    [
+        (
+            200,
+            True,
+            "packages",
+            [
+                {
+                    "name": PV_REV["items"][0]["metadata"]["name"],
+                    "lifecycle": PV_REV["items"][0]["spec"]["lifecycle"],
+                }
+            ],
+            False,
+        ),
+        (401, False, "reason", "unauthorized", False),
+        (403, False, "reason", "unauthorized", False),
+        (404, False, "reason", "notFound", False),
+        (1234, False, "reason", "Error in querying for package revision", False),
+        (None, False, "reason", "NotAbleToCommunicateWithTheCluster ", True),
+    ],
+)
+def test_get_package_revisions_for_package_variant(
+    http_code, status, response_2, response_2_value, exception
+):
+    if not exception:
+        responses.get(
+            PACKAGE_REVISIONS_URI,
+            json=PV_REV,
+            status=http_code,
+        )
+    else:
+        responses.get(
+            PACKAGE_REVISIONS_URI,
+            body=Exception(""),
+        )
+    response = get_package_revisions_for_package_variant(NAME, NAMESPACE)
+    assert response["status"] == status and response[response_2] == response_2_value
 
 
 @responses.activate
@@ -193,13 +246,13 @@ def test_delete_package_revision(
 ):
     if not exception:
         responses.delete(
-            PACKAGE_REVISIONS_URI,
+            f"{PACKAGE_REVISIONS_URI}/{NAME}",
             json=TEST_JSON,
             status=http_code,
         )
     else:
         responses.delete(
-            PACKAGE_REVISIONS_URI,
+            f"{PACKAGE_REVISIONS_URI}/{NAME}",
             body=Exception(""),
         )
     response = delete_package_revision(NAME, NAMESPACE)

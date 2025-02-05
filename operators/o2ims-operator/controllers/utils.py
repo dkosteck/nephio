@@ -243,7 +243,8 @@ def get_package_revisions_for_package_variant(
         "Accept": "application/json",
         "Authorization": "Bearer {}".format(TOKEN),
     }
-    logger.debug("get_package_revisions_for_package_variant")
+    if logger:
+        logger.debug("get_package_revisions_for_package_variant")
     try:
         r = requests.get(
             f"{KUBERNETES_BASE_URL}/apis/porch.kpt.dev/v1alpha1/namespaces/{namespace}/packagerevisions",
@@ -251,11 +252,13 @@ def get_package_revisions_for_package_variant(
             verify=HTTPS_VERIFY,
         )
     except Exception as e:
-        logger.debug("get_packaage_revisions error: %s" % (e))
+        if logger:
+            logger.debug("get_packaage_revisions error: %s" % (e))
         return {"status": False, "reason": f"NotAbleToCommunicateWithTheCluster {e}"}
-    logger.debug(
-        f"response of the request {r.request.url} to get package revision is {r}"
-    )
+    if logger:
+        logger.debug(
+            f"response of the request {r.request.url} to get package revision is {r}"
+        )
     if r.status_code in [200]:
         pv_revs = r.json()
         packages_lifecycle = []
@@ -269,7 +272,7 @@ def get_package_revisions_for_package_variant(
                 )
         response = {"status": True, "packages": packages_lifecycle}
     elif r.status_code in [401, 403]:
-        response = {"status": False, "reason": "Unauthorized"}
+        response = {"status": False, "reason": "unauthorized"}
     elif r.status_code == 404:
         response = {"status": False, "reason": f"notFound"}
     else:
