@@ -346,7 +346,8 @@ def check_o2ims_provisioning_request(
         "Authorization": "Bearer {}".format(TOKEN),
     }
 
-    logger.debug("get_capi_cluster")
+    if logger:
+        logger.debug("get_capi_cluster")
 
     try:
         r = requests.get(
@@ -355,7 +356,8 @@ def check_o2ims_provisioning_request(
             verify=HTTPS_VERIFY,
         )
     except Exception as e:
-        logger.debug("check_o2ims_provisioning_request error: %s" % (e))
+        if logger:
+            logger.debug("check_o2ims_provisioning_request error: %s" % (e))
         return {"status": False, "reason": f"NotAbleToCommunicateWithTheCluster {e}"}
     if r.status_code in [200] and "status" in r.json().keys():
         response = {
@@ -375,11 +377,11 @@ def check_o2ims_provisioning_request(
             },
         }
     elif r.status_code in [401, 403]:
-        response = {"status": False, "reason": "Unauthorized"}
+        response = {"status": False, "reason": "unauthorized"}
     elif r.status_code == 404:
         response = {"status": False, "reason": "notFound"}
         creation_status = get_package_variant(
-            name=request_name, namespace=namespace, logger=logger
+            name=name, namespace=namespace, logger=logger
         )
         response.update({"pv": creation_status["status"]})
     else:
@@ -387,7 +389,8 @@ def check_o2ims_provisioning_request(
             "status": False,
             "reason": r.json(),
         }
-    logger.debug(f"check_o2ims_provisioning_request response: {r.json()}")
+    if logger:
+        logger.debug(f"check_o2ims_provisioning_request response: {r.json()}")
     return response
 
 
