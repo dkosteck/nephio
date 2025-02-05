@@ -65,8 +65,8 @@ def create_package_variant(
         "User-Agent": "kopf o2ims operator/python",
         "Authorization": "Bearer {}".format(TOKEN),
     }
-
-    logger.debug("create_package_variant")
+    if logger:
+        logger.debug("create_package_variant")
     try:
         r = requests.get(
             f"{KUBERNETES_BASE_URL}/apis/config.porch.kpt.dev/v1alpha1/namespaces/{namespace}/packagevariants/{name}",
@@ -78,7 +78,7 @@ def create_package_variant(
     if r.status_code in [200]:
         response = {"status": True, "name": name}
     elif r.status_code in [401, 403]:
-        response = {"status": False, "reason": "Unauthorized"}
+        response = {"status": False, "reason": "unauthorized"}
     elif r.status_code == 404 and pv_param["create"]:
         pv_body = {
             "apiVersion": "config.porch.kpt.dev/v1alpha1",
@@ -99,19 +99,21 @@ def create_package_variant(
                 "pipeline": {"mutators": pv_param["mutators"]},
             },
         }
-        logger.debug(
-            f"package-variant {name} does not exist in namespace {namespace}, o2ims operator is creating it now"
-        )
+        if logger:
+            logger.debug(
+                f"package-variant {name} does not exist in namespace {namespace}, o2ims operator is creating it now"
+            )
         r = requests.post(
             f"{KUBERNETES_BASE_URL}/apis/config.porch.kpt.dev/v1alpha1/namespaces/{namespace}/packagevariants",
             headers=headers,
             json=pv_body,
             verify=HTTPS_VERIFY,
         )
-        logger.debug(
-            "response of the request to create package variant %s is %s"
-            % (r.request.url, r.json())
-        )
+        if logger:
+            logger.debug(
+                "response of the request to create package variant %s is %s"
+                % (r.request.url, r.json())
+            )
         if r.status_code in [200, 201]:
             response = {"status": True, "name": name}
         elif r.status_code in [401, 403]:
@@ -128,7 +130,8 @@ def create_package_variant(
         response = {"status": False, "reason": "k8sApi server is not reachable"}
     else:
         response = {"status": False, "reason": r.json()}
-    logger.debug(response)
+    if logger:
+        logger.debug(response)
     return response
 
 
