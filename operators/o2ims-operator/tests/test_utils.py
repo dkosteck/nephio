@@ -133,7 +133,12 @@ def test_create_package_variant(get_code, post_code, status, create, response_2,
     ],
 )
 def test_delete_package_variant(http_code, status, response_2, response_2_value, exception):
-    if not exception:
+    if not exception and http_code == 204:
+        responses.delete(
+            f"{PACKAGE_VARIANTS_URI}/{NAME}",
+            status=http_code,
+        )
+    elif not exception:
         responses.delete(
             f"{PACKAGE_VARIANTS_URI}/{NAME}",
             json=TEST_JSON,
@@ -240,7 +245,12 @@ def test_get_package_revisions_for_package_variant(http_code, status, response_2
     ],
 )
 def test_delete_package_revision(http_code, status, response_2, response_2_value, exception):
-    if not exception:
+    if not exception and http_code == 204:
+        responses.delete(
+            f"{PACKAGE_REVISIONS_URI}/{NAME}",
+            status=http_code,
+        )
+    elif not exception:
         responses.delete(
             f"{PACKAGE_REVISIONS_URI}/{NAME}",
             json=TEST_JSON,
