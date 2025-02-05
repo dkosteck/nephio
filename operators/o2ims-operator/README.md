@@ -239,7 +239,7 @@ Unit tests are contained in the `tests` directory, and are intended to test piec
 
 Prior to running the tests, install the requirements:
 ```bash
-pip3 install -r unit_test_requirements.txt
+pip3 install -r ./tests/unit_test_requirements.txt
 ```
 
 To run all tests in `test_utils.py` with abridged output:
